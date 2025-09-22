@@ -1,8 +1,9 @@
-Title: Align hybrid config with Qwen3-14B geometry
+Title: Add Unsloth conversion script and finalize Qwen3 alignment
 
 Summary:
-- Update GLAswa defaults to match Qwen3-14B (vocab 151936, FFN 17408, max positions 40,960, eos 151645) so donor checkpoints load cleanly.
-- Preserve existing SWA/GLA layout and spiking toggles for the conversion workflow.
+- Fix GLAswaConfig defaults (vocab, FFN, context, EOS) to mirror Qwen3-14B without duplicate arguments.
+- Ignore local checkpoint/cache directories in .gitignore.
+- Introduce `run_model/convert_qwen3_unsloth.py` to copy Qwen3 weights into the hybrid SpikingBrain model and optionally run Unsloth fine-tuning with gradient checkpointing/accumulation.
 
 Testing:
-- Pending: load Qwen3-14B weights and run conversion pretraining once checkpoints are downloaded.
+- Pending: execute conversion script against ./qwen3-14b-ckpt and launch Unsloth fine-tuning once resources are available.

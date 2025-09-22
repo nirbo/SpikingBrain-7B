@@ -47,14 +47,13 @@ class GLAswaConfig(PretrainedConfig):
         use_cache=True,
         pad_token_id=None,
         bos_token_id=151643,
-        eos_token_id=151643,
+        eos_token_id=151645,
         tie_word_embeddings=False,
         initializer_range=0.02,
         fuse_cross_entropy=True,
         enable_spike=False,
         spike_dynamic_scale=3.0,
         spike_bitwidth=8,
-        eos_token_id=151645,
         **kwargs
     ):
         self.vocab_size = vocab_size

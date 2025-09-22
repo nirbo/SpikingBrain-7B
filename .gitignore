@@ -7,3 +7,5 @@
 **/debug_logs/
 **/debug_txt_logs/*
 *.pt
+qwen3-14b-ckpt/
+unsloth_compiled_cache/
