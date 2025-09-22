@@ -58,6 +58,9 @@ class HybridBlock(nn.Module):
     def __init__(self, config: GLAswaConfig, layer_idx: int):
         super().__init__()
         self.hidden_size = config.hidden_size
+        self.enable_spike = config.enable_spike
+        self.spike_dynamic_scale = config.spike_dynamic_scale
+        self.spike_bitwidth = config.spike_bitwidth
 
         self.attn_norm = RMSNorm(hidden_size=config.hidden_size, eps=config.norm_eps)
         if layer_idx in config.attn_layers:
@@ -70,6 +73,9 @@ class HybridBlock(nn.Module):
             rope_theta=config.rope_theta,
             attention_dropout=config.attention_dropout,
             layer_idx=layer_idx,
+            enable_spike=config.enable_spike,
+            spike_dynamic_scale=config.spike_dynamic_scale,
+            spike_bitwidth=config.spike_bitwidth,
         )
         else:
             self.attn = GatedLinearAttention(
@@ -82,6 +88,9 @@ class HybridBlock(nn.Module):
                 elementwise_affine=config.elementwise_affine,
                 norm_eps=config.norm_eps,
                 layer_idx=layer_idx,
+                enable_spike=config.enable_spike,
+                spike_dynamic_scale=config.spike_dynamic_scale,
+                spike_bitwidth=config.spike_bitwidth,
             )
         self.mlp_norm = RMSNorm(hidden_size=config.hidden_size, eps=config.norm_eps)
         self.mlp = GLU(

@@ -29,14 +29,14 @@ class GLAswaConfig(PretrainedConfig):
     def __init__(
         self,
         vocab_size=152064,
-        hidden_size=3584,
-        num_hidden_layers=28,
+        hidden_size=5120,
+        num_hidden_layers=40,
         attn_mode="chunk",
-        num_attention_heads=28,
-        num_key_value_heads=4,
+        num_attention_heads=40,
+        num_key_value_heads=8,
         use_short_conv=False,
         conv_size=4,
-        intermediate_size=18944,
+        intermediate_size=14336,
         hidden_act="swish",
         max_position_embeddings=4096 * 32,
         sliding_window=4096,
@@ -51,6 +51,9 @@ class GLAswaConfig(PretrainedConfig):
         tie_word_embeddings=False,
         initializer_range=0.02,
         fuse_cross_entropy=True,
+        enable_spike=False,
+        spike_dynamic_scale=3.0,
+        spike_bitwidth=8,
         **kwargs
     ):
         self.vocab_size = vocab_size
@@ -72,6 +75,9 @@ class GLAswaConfig(PretrainedConfig):
         self.rope_theta = rope_theta
         self.attention_dropout = attention_dropout
         self.fuse_cross_entropy = fuse_cross_entropy
+        self.enable_spike = enable_spike
+        self.spike_dynamic_scale = spike_dynamic_scale
+        self.spike_bitwidth = spike_bitwidth
         self.attn_layers = list(range(1, num_hidden_layers, 2))
 
         super().__init__(

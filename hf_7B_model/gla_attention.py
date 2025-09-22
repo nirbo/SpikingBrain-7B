@@ -19,6 +19,7 @@ from fla.ops.gla import chunk_gla, fused_chunk_gla, fused_recurrent_gla
 from fla.modules import RMSNorm
 
 from .cache import Cache
+from .spiking import dynamic_spikes, quantize_sym
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -48,6 +49,9 @@ class GatedLinearAttention(nn.Module):
         gate_logit_normalizer: int = 16,
         gate_low_rank_dim: int = 16,
         layer_idx: int = None,
+        enable_spike: bool = False,
+        spike_dynamic_scale: float = 3.0,
+        spike_bitwidth: int = 8,
     ) -> GatedLinearAttention:
         super().__init__()
 
@@ -65,6 +69,9 @@ class GatedLinearAttention(nn.Module):
         self.key_dim = hidden_size
         self.head_dim = self.hidden_size // num_heads
         self.layer_idx = layer_idx
+        self.enable_spike = enable_spike
+        self.spike_dynamic_scale = spike_dynamic_scale
+        self.spike_bitwidth = spike_bitwidth
 
         assert mode in ['chunk', 'fused_recurrent', 'fused_chunk'], f"Not suppoerted mode `{mode}`."
         assert self.key_dim % num_heads == 0, f"key dim must be divisible by num_heads of {num_heads}"
@@ -144,6 +151,12 @@ class GatedLinearAttention(nn.Module):
         gk = rearrange(gk, 'b l (h d) -> b h l d', h=self.num_key_value_heads)
         gk = F.logsigmoid(gk) / self.gate_logit_normalizer
         
+        if self.enable_spike:
+            q_int, vth = dynamic_spikes(q, self.spike_dynamic_scale)
+            q = (q_int * vth).to(q.dtype)
+            k = quantize_sym(k, bitwidth=self.spike_bitwidth)
+            v = quantize_sym(v, bitwidth=self.spike_bitwidth)
+
         k = repeat_kv(k, self.num_key_value_groups)
         v = repeat_kv(v, self.num_key_value_groups)
         gk = repeat_kv(gk, self.num_key_value_groups)

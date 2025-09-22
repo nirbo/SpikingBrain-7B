@@ -18,6 +18,7 @@ if is_flash_attn_2_available():
     from flash_attn.bert_padding import pad_input, unpad_input
 
 from .cache import Cache
+from .spiking import dynamic_spikes, quantize_sym
 
 
 class RotaryEmbedding(nn.Module):
@@ -102,6 +103,9 @@ class FlashAttention(nn.Module):
             rope_theta: float = 10000.0,
             attention_dropout: float = 0.0,
             layer_idx: Optional[int] = None,
+            enable_spike: bool = False,
+            spike_dynamic_scale: float = 3.0,
+            spike_bitwidth: int = 8,
         ) -> FlashAttention:
         super().__init__()
         self.layer_idx = layer_idx
@@ -115,6 +119,9 @@ class FlashAttention(nn.Module):
         self.max_position_embeddings = max_position_embeddings
         self.rope_theta = rope_theta
         self.attention_dropout = attention_dropout
+        self.enable_spike = enable_spike
+        self.spike_dynamic_scale = spike_dynamic_scale
+        self.spike_bitwidth = spike_bitwidth
 
         self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=True)
         self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=True)
@@ -179,6 +186,12 @@ class FlashAttention(nn.Module):
         query_states = query_states.transpose(1, 2)
         key_states = key_states.transpose(1, 2)
         value_states = value_states.transpose(1, 2)
+
+        if self.enable_spike:
+            query_states_int, q_vth = dynamic_spikes(query_states, self.spike_dynamic_scale)
+            query_states = (query_states_int * q_vth).to(query_states.dtype)
+            key_states = quantize_sym(key_states, bitwidth=self.spike_bitwidth)
+            value_states = quantize_sym(value_states, bitwidth=self.spike_bitwidth)
 
         if self.training:
             attn_output = flash_attn_func(

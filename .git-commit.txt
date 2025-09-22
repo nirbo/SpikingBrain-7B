@@ -1,0 +1,11 @@
+Title: Enable optional spiking path and scale HF hybrid model to ~14B params
+
+Summary:
+- Grow GLAswa defaults to a ~14B footprint (hidden 5120, 40 layers, 40/8 heads, wider SwiGLU) while keeping SWA/GLA interleave.
+- Introduce configurable spiking controls (enable flag, dynamic scale, bitwidth) surfaced through GLAswaConfig and HybridBlock.
+- Add shared spiking helpers paralleling W8ASpike dynamic spike encoding with Int2Spike-aware fallbacks.
+- Update FlashAttention and GatedLinearAttention to quantize QKV tensors when spiking is enabled, preserving linear-time behavior with spike simulation.
+- Record roadmap actions, optional MoE/advanced enhancements, and scaling priorities in WORKPLAN.md for team visibility.
+
+Testing:
+- Pending: run HF inference with enable_spike toggled to assess TTFT and memory impacts once weights/checkpoints are available.
