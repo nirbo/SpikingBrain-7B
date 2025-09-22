@@ -1,9 +1,10 @@
-Title: Add Unsloth conversion script and finalize Qwen3 alignment
+Title: Enable chat dataset ingestion for Unsloth conversion
 
 Summary:
-- Fix GLAswaConfig defaults (vocab, FFN, context, EOS) to mirror Qwen3-14B without duplicate arguments.
-- Ignore local checkpoint/cache directories in .gitignore.
-- Introduce `run_model/convert_qwen3_unsloth.py` to copy Qwen3 weights into the hybrid SpikingBrain model and optionally run Unsloth fine-tuning with gradient checkpointing/accumulation.
+- Added --extra-dataset-args flag and JSON parsing to forward custom load_dataset kwargs (e.g., data_files).
+- Detect chat-style conversation records and collapse them into a single text sequence with speaker tags and EOS tokens.
+- Ensure dataset columns are pruned to 'text' and validate --dataset usage during training.
+- Ignore local datasets/ directory to keep downloaded corpora out of Git.
 
 Testing:
-- Pending: execute conversion script against ./qwen3-14b-ckpt and launch Unsloth fine-tuning once resources are available.
+- Pending: run convert_qwen3_unsloth.py against ./datasets/OpenHermes-2.5/openhermes2_5.json using the new options.

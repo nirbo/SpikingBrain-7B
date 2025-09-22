@@ -14,8 +14,7 @@ from safetensors.torch import load_file
 from transformers import AutoTokenizer
 
 from hf_7B_model import GLAswaConfig, GLAswaForCausalLM
-from unsloth import (FastQwen3Model, UnslothTrainer, UnslothTrainingArguments,
-                     add_new_tokens)
+from unsloth import UnslothTrainer, UnslothTrainingArguments
 from datasets import load_dataset
 from transformers import DataCollatorForLanguageModeling
 
@@ -28,7 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", required=True, help="Directory to save the converted SpikingBrain model")
     parser.add_argument("--dataset", default=None, help="Optional Hugging Face dataset name (e.g. 'tatsu-lab/alpaca') for immediate fine-tuning")
     parser.add_argument("--dataset-split", default="train", help="Dataset split to use when fine-tuning")
-    parser.add_argument("--text-column", default="text", help="Column containing plain text for language-model fine-tuning")
+    parser.add_argument("--text-column", default=None, help="Column containing plain text when not using chat-style data")
     parser.add_argument("--max-seq-length", type=int, default=4096, help="Sequence length for training")
     parser.add_argument("--per-device-train-batch-size", type=int, default=1, help="Per-device batch size")
     parser.add_argument("--gradient-accumulation-steps", type=int, default=16, help="Gradient accumulation steps (Unsloth will fuse optimisations)")
@@ -40,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-convert", action="store_true", help="Skip weight conversion if converted weights are already present in output-dir")
     parser.add_argument("--train", action="store_true", help="Run Unsloth fine-tuning after conversion")
     parser.add_argument("--device", default="cpu", help="Device to place converted model on (e.g. 'cuda', 'cpu')")
+    parser.add_argument("--extra-dataset-args", default=None, help="JSON string of extra keyword arguments for datasets.load_dataset (e.g. data_files)")
     return parser.parse_args()
 
 
@@ -171,16 +171,33 @@ def prepare_unsloth_trainer(
     dataset_split: str,
     text_column: str,
     args: argparse.Namespace,
+    extra_dataset_kwargs: Optional[dict],
 ) -> UnslothTrainer:
-    dataset = load_dataset(dataset_name, split=dataset_split)
+    dataset_kwargs = extra_dataset_kwargs or {}
+    dataset = load_dataset(dataset_name, split=dataset_split, **dataset_kwargs)
+    original_columns = dataset.column_names
 
     def format_example(example):
-        text = example[text_column]
-        if not text.endswith(tokenizer.eos_token):
+        if "conversations" in example:
+            chunks = []
+            for turn in example["conversations"]:
+                role = turn.get("from", "")
+                speaker = "User" if role == "human" else "Assistant"
+                chunks.append(f"{speaker}: {turn.get('value', '').strip()}")
+            text = "\n".join(chunks)
+        else:
+            if text_column is None:
+                raise ValueError("text_column must be provided when dataset entries are not chat-style")
+            text = example[text_column]
+        if tokenizer.eos_token and not text.endswith(tokenizer.eos_token):
             text = text + tokenizer.eos_token
         return {"text": text}
 
-    dataset = dataset.map(format_example, remove_columns=[col for col in dataset.column_names if col != text_column], num_proc=1)
+    dataset = dataset.map(
+        format_example,
+        remove_columns=original_columns,
+        num_proc=1,
+    )
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
@@ -215,6 +232,7 @@ def main() -> None:
     args = parse_args()
 
     tokenizer = load_tokenizer(args.qwen3_path)
+    extra_dataset_kwargs = json.loads(args.extra_dataset_args) if args.extra_dataset_args else None
 
     if not args.no_convert:
         LOGGER.info("Instantiating hybrid model with Qwen3-compatible configuration")
@@ -232,6 +250,8 @@ def main() -> None:
         LOGGER.info("Skipping conversion because --no-convert was set")
 
     if args.train:
+        if args.dataset is None:
+            raise ValueError("--dataset must be provided when --train is specified")
         LOGGER.info("Loading converted model from %s for Unsloth fine-tuning", args.output_dir)
         model = GLAswaForCausalLM.from_pretrained(args.output_dir, torch_dtype=torch.bfloat16 if args.bf16 else torch.float32)
         model.gradient_checkpointing_enable()
@@ -242,6 +262,7 @@ def main() -> None:
             dataset_split=args.dataset_split,
             text_column=args.text_column,
             args=args,
+            extra_dataset_kwargs=extra_dataset_kwargs,
         )
         trainer.train()
         trainer.save_model(args.output_dir)

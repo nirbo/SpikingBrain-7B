@@ -9,3 +9,4 @@
 *.pt
 qwen3-14b-ckpt/
 unsloth_compiled_cache/
+datasets/
