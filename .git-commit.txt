@@ -1,10 +1,8 @@
-Title: Enable chat dataset ingestion for Unsloth conversion
+Title: Allow custom optimizer selection for Unsloth runs
 
 Summary:
-- Added --extra-dataset-args flag and JSON parsing to forward custom load_dataset kwargs (e.g., data_files).
-- Detect chat-style conversation records and collapse them into a single text sequence with speaker tags and EOS tokens.
-- Ensure dataset columns are pruned to 'text' and validate --dataset usage during training.
-- Ignore local datasets/ directory to keep downloaded corpora out of Git.
+- Added --optim flag pass-through to UnslothTrainingArguments so users can choose 'adamw_8bit' or other optimizers.
+- Updated training helper to use the selected optimizer.
 
 Testing:
-- Pending: run convert_qwen3_unsloth.py against ./datasets/OpenHermes-2.5/openhermes2_5.json using the new options.
+- Pending: rerun conversion command with --optim adamw_8bit to verify bitsandbytes integration.

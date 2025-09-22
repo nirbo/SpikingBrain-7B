@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Convert Qwen3-14B weights to the SpikingBrain HF hybrid model and optionally fine-tune with Unsloth."""
 
+import unsloth
 import argparse
 import json
 import logging
@@ -40,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train", action="store_true", help="Run Unsloth fine-tuning after conversion")
     parser.add_argument("--device", default="cpu", help="Device to place converted model on (e.g. 'cuda', 'cpu')")
     parser.add_argument("--extra-dataset-args", default=None, help="JSON string of extra keyword arguments for datasets.load_dataset (e.g. data_files)")
+    parser.add_argument("--optim", default="adamw_torch", help="Optimizer name for UnslothTrainingArguments (e.g. 'adamw_8bit')")
     return parser.parse_args()
 
 
@@ -211,7 +213,7 @@ def prepare_unsloth_trainer(
         save_steps=args.save_steps,
         bf16=args.bf16,
         gradient_checkpointing=True,
-        optim="adamw_torch",
+        optim=args.optim,
         report_to="none",
         max_steps=-1,
     )
