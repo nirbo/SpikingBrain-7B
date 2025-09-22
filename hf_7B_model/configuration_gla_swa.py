@@ -28,7 +28,7 @@ class GLAswaConfig(PretrainedConfig):
 
     def __init__(
         self,
-        vocab_size=152064,
+        vocab_size=151936,
         hidden_size=5120,
         num_hidden_layers=40,
         attn_mode="chunk",
@@ -36,9 +36,9 @@ class GLAswaConfig(PretrainedConfig):
         num_key_value_heads=8,
         use_short_conv=False,
         conv_size=4,
-        intermediate_size=14336,
+        intermediate_size=17408,
         hidden_act="swish",
-        max_position_embeddings=4096 * 32,
+        max_position_embeddings=40960,
         sliding_window=4096,
         elementwise_affine=True,
         norm_eps=1e-6,
@@ -54,6 +54,7 @@ class GLAswaConfig(PretrainedConfig):
         enable_spike=False,
         spike_dynamic_scale=3.0,
         spike_bitwidth=8,
+        eos_token_id=151645,
         **kwargs
     ):
         self.vocab_size = vocab_size
