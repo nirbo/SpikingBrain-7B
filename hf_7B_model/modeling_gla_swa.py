@@ -135,7 +135,7 @@ class HybridBlock(nn.Module):
         return outputs
 
 
-class HybridPreTrainedModel(PreTrainedModel, GenerationMixin):
+class HybridPreTrainedModel(GenerationMixin, PreTrainedModel):
 
     config_class = GLAswaConfig
     supports_gradient_checkpointing = True

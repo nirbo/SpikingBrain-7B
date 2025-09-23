@@ -1,8 +1,8 @@
-Title: Expand tokenizer to match Qwen3 vocab before resizing embeddings
+Title: Align vocab resize with tokenizer length and reorder GenerationMixin
 
 Summary:
-- When loading the tokenizer, add placeholder tokens so its length matches source_config.vocab_size (151936) before copying weights.
-- Ensures resize_token_embeddings aligns with checkpoint rows and avoids lm_head/embed mismatch warnings.
+- After loading Qwen3 tokenizer, set GLAswaConfig.vocab_size=len(tokenizer) and resize token embeddings with the same value to ensure lm_head/embed weights match the checkpoint rows.
+- Inherit GenerationMixin ahead of PreTrainedModel so Transformers no longer warns about generate support.
 
 Testing:
-- Pending: rerun conversion to confirm warnings gone.
+- Pending: rerun CPU conversion to confirm warnings are resolved.
