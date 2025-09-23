@@ -300,16 +300,8 @@ def main() -> None:
                 args.output_dir,
                 torch_dtype=torch.bfloat16 if args.bf16 else torch.float32,
             ).to(device)
-
-        requested_dtype = torch.bfloat16 if args.bf16 else torch.float16
-        model_dtype = getattr(model, "dtype", requested_dtype)
-        use_bf16 = args.bf16 and model_dtype == torch.bfloat16
-        use_fp16 = not use_bf16 and model_dtype == torch.float16
-        if args.bf16 and not use_bf16:
-            LOGGER.warning(
-                "Model dtype is %s; falling back to fp16 training to satisfy Unsloth requirements.",
-                model_dtype,
-            )
+        use_bf16 = args.bf16
+        use_fp16 = not args.bf16
 
         if args.use_lora:
             try:

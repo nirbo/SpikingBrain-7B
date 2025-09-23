@@ -1,9 +1,8 @@
-Title: Make 4-bit QLoRA training compatible with precision checks
+Title: Keep bf16 requests when using 4-bit QLoRA
 
 Summary:
-- Added --per-device-eval-batch-size and passed it to UnslothTrainingArguments to control eval memory.
-- Detected model dtype after loading; if bf16 requested but model remains fp16, automatically fall back to fp16 and warn.
-- Forward bf16/fp16 flags explicitly and reuse them in UnslothTrainingArguments.
+- Removed dtype fallback logic so bf16 requests are honored even if the quantized base reports float16; compute dtype is already set via BitsAndBytesConfig.
+- fp16/bf16 flags now align directly with CLI arguments.
 
 Testing:
-- Pending: rerun 4-bit QLoRA command with bf16 to confirm the precision mismatch error is resolved.
+- Pending: rerun QLoRA command with --bf16 to confirm FlashAttention uses bf16 without errors.
