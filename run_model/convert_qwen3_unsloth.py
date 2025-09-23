@@ -12,7 +12,7 @@ from typing import Dict, Iterable, Optional
 import torch
 from safetensors.torch import load_file
 
-from transformers import AutoTokenizer
+from transformers import AutoConfig, AutoTokenizer
 
 from hf_7B_model import GLAswaConfig, GLAswaForCausalLM
 from unsloth import UnslothTrainer, UnslothTrainingArguments
@@ -45,27 +45,27 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_tokenizer(qwen_path: str) -> AutoTokenizer:
+def load_tokenizer(qwen_path: str, source_config: AutoConfig) -> AutoTokenizer:
     tokenizer = AutoTokenizer.from_pretrained(qwen_path, use_fast=True)
     # Ensure special tokens exist as expected by our config
     if tokenizer.bos_token_id is None:
-        tokenizer.bos_token_id = 151643
+        tokenizer.bos_token_id = source_config.bos_token_id
     if tokenizer.eos_token_id is None:
-        tokenizer.eos_token_id = 151645
+        tokenizer.eos_token_id = source_config.eos_token_id
     return tokenizer
 
 
-def build_config_from_qwen(tokenizer: AutoTokenizer) -> GLAswaConfig:
+def build_config_from_qwen(source_config: AutoConfig) -> GLAswaConfig:
     return GLAswaConfig(
-        vocab_size=tokenizer.vocab_size,
-        hidden_size=5120,
-        num_hidden_layers=40,
-        num_attention_heads=40,
-        num_key_value_heads=8,
-        intermediate_size=17408,
-        max_position_embeddings=40960,
-        bos_token_id=tokenizer.bos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
+        vocab_size=source_config.vocab_size,
+        hidden_size=source_config.hidden_size,
+        num_hidden_layers=source_config.num_hidden_layers,
+        num_attention_heads=source_config.num_attention_heads,
+        num_key_value_heads=source_config.num_key_value_heads,
+        intermediate_size=source_config.intermediate_size,
+        max_position_embeddings=source_config.max_position_embeddings,
+        bos_token_id=source_config.bos_token_id,
+        eos_token_id=source_config.eos_token_id,
         enable_spike=False,
     )
 
@@ -233,12 +233,13 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     args = parse_args()
 
-    tokenizer = load_tokenizer(args.qwen3_path)
+    source_config = AutoConfig.from_pretrained(args.qwen3_path)
+    tokenizer = load_tokenizer(args.qwen3_path, source_config)
     extra_dataset_kwargs = json.loads(args.extra_dataset_args) if args.extra_dataset_args else None
 
     if not args.no_convert:
         LOGGER.info("Instantiating hybrid model with Qwen3-compatible configuration")
-        config = build_config_from_qwen(tokenizer)
+        config = build_config_from_qwen(source_config)
         device = torch.device(args.device)
         hybrid_model = GLAswaForCausalLM(config)
         hybrid_model.resize_token_embeddings(tokenizer.vocab_size)

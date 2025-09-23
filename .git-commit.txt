@@ -1,7 +1,9 @@
-Title: Inherit GenerationMixin to silence generate warning
+Title: Base conversion config on Qwen3 AutoConfig
 
 Summary:
-- HybridPreTrainedModel now inherits from (PreTrainedModel, GenerationMixin) so GLAswaForCausalLM keeps full generation support without warnings in upcoming Transformers releases.
+- Load Qwen3 AutoConfig to capture exact vocab size, FFN width, and positional settings before building GLAswaConfig.
+- Pass AutoConfig to tokenizer loader and resize token embeddings to the source vocab (151936) prior to weight copy, eliminating lm_head/embed mismatch warnings.
+- Ignore spikingbrain-qwen3-converted/ artifacts.
 
 Testing:
-- Pending: rerun conversion to confirm the warning is gone.
+- Pending: rerun conversion on CPU to confirm clean logging.
