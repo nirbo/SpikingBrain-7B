@@ -1,7 +1,7 @@
-Title: Add GenerationMixin directly to HybridModel and GLAswaForCausalLM
+Title: Remove redundant GenerationMixin inheritance
 
 Summary:
-- Both HybridModel and GLAswaForCausalLM now directly inherit GenerationMixin, satisfying Transformers' generate check and removing repeated warnings.
+- Reverted HybridPreTrainedModel back to PreTrainedModel only while keeping GenerationMixin on HybridModel and GLAswaForCausalLM, preventing MRO conflicts and still suppressing warnings.
 
 Testing:
-- Pending: rerun conversion to verify the warning no longer appears.
+- Pending: rerun conversion to verify clean logs and no TypeError.
