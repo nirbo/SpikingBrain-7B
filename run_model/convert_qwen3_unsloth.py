@@ -331,8 +331,6 @@ def main() -> None:
                 model = prepare_model_for_kbit_training(
                     model,
                     use_gradient_checkpointing=True,
-                    layer_norm_names=[],
-                    cast_input_dtype=False,
                 )
 
             lora_config = LoraConfig(

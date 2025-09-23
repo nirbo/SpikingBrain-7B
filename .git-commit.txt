@@ -1,8 +1,8 @@
-Title: Prevent prepare_model_for_kbit_training from casting to float32
+Title: Use new prepare_model_for_kbit_training signature
 
 Summary:
-- Call prepare_model_for_kbit_training with cast_input_dtype=False and layer_norm names empty so embeddings remain in the compute dtype for flash attention.
-- After attaching LoRA adapters, ensure input embeddings and lm_head are explicitly cast back to the training dtype (fp16/bf16).
+- Updated QLoRA flow to call prepare_model_for_kbit_training with only the supported arguments (use_gradient_checkpointing=True).
+- Removes unsupported keyword layer_norm_names that caused runtime TypeError.
 
 Testing:
-- Pending: rerun QLoRA command to confirm FlashAttention no longer receives float32 tensors.
+- Pending: rerun 4-bit QLoRA command to confirm it proceeds past model preparation.
