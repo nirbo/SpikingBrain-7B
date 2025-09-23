@@ -212,7 +212,7 @@ def prepare_unsloth_trainer(
         logging_steps=args.logging_steps,
         save_steps=args.save_steps,
         bf16=args.bf16,
-        gradient_checkpointing=True,
+        gradient_checkpointing="unsloth",
         optim=args.optim,
         report_to="none",
         max_steps=-1,

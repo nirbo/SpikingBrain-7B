@@ -1,8 +1,7 @@
-Title: Allow custom optimizer selection for Unsloth runs
+Title: Switch gradient checkpointing to Unsloth mode
 
 Summary:
-- Added --optim flag pass-through to UnslothTrainingArguments so users can choose 'adamw_8bit' or other optimizers.
-- Updated training helper to use the selected optimizer.
+- Updated UnslothTrainingArguments to use gradient_checkpointing="unsloth" so the optimized checkpointing path is guaranteed.
 
 Testing:
-- Pending: rerun conversion command with --optim adamw_8bit to verify bitsandbytes integration.
+- Pending: rerun conversion/fine-tuning to verify Unsloth reports the expected checkpointing mode.
