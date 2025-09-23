@@ -220,6 +220,27 @@ def prepare_unsloth_trainer(
         num_proc=30,
     )
 
+    tokenized = tokenizer(
+        dataset["text"],
+        truncation=True,
+        max_length=args.max_seq_length,
+        padding=False,
+    )
+
+    filtered_indices = [i for i, ids in enumerate(tokenized["input_ids"]) if len(ids) <= args.max_seq_length]
+    dataset = dataset.select(filtered_indices)
+    tokenized["input_ids"] = [tokenized["input_ids"][i] for i in filtered_indices]
+    tokenized["attention_mask"] = [tokenized["attention_mask"][i] for i in filtered_indices]
+
+    dataset = dataset.map(
+        lambda _, idx: {
+            "input_ids": tokenized["input_ids"][idx],
+            "attention_mask": tokenized["attention_mask"][idx],
+        },
+        with_indices=True,
+        remove_columns=["text"],
+    )
+
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
     training_args = UnslothTrainingArguments(

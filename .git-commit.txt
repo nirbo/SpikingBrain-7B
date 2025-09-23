@@ -1,7 +1,7 @@
-Title: Add scheduler and gradient clipping options
+Title: Enforce max_seq_length by filtering long conversations
 
 Summary:
-- Added CLI arguments --warmup-steps and --max-grad-norm, wiring them into UnslothTrainingArguments so learning rate warmup and gradient clipping can be configured.
+- After mapping conversations to text, tokenize with truncation and drop any sample whose length exceeds --max-seq-length before passing to the data collator.
 
 Testing:
-- Pending: rerun fine-tuning with warmup/clipping flags to check for stability improvements.
+- Pending: rerun fine-tuning to confirm step time and loss behave with capped sequence length.
