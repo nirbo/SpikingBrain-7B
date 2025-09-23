@@ -179,7 +179,7 @@ class HybridPreTrainedModel(GenerationMixin, PreTrainedModel):
                         p /= math.sqrt(num_residuals_per_layer * self.config.num_hidden_layers)
 
 
-class HybridModel(HybridPreTrainedModel):
+class HybridModel(GenerationMixin, HybridPreTrainedModel):
 
     def __init__(self, config: GLAswaConfig):
         super().__init__(config)
@@ -303,7 +303,7 @@ class HybridModel(HybridPreTrainedModel):
         )
 
 
-class GLAswaForCausalLM(HybridPreTrainedModel):
+class GLAswaForCausalLM(GenerationMixin, HybridPreTrainedModel):
     _tied_weights_keys = ["lm_head.weight"]
 
     def __init__(self, config):

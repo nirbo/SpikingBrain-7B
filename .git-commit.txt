@@ -1,8 +1,7 @@
-Title: Align vocab resize with tokenizer length and reorder GenerationMixin
+Title: Add GenerationMixin directly to HybridModel and GLAswaForCausalLM
 
 Summary:
-- After loading Qwen3 tokenizer, set GLAswaConfig.vocab_size=len(tokenizer) and resize token embeddings with the same value to ensure lm_head/embed weights match the checkpoint rows.
-- Inherit GenerationMixin ahead of PreTrainedModel so Transformers no longer warns about generate support.
+- Both HybridModel and GLAswaForCausalLM now directly inherit GenerationMixin, satisfying Transformers' generate check and removing repeated warnings.
 
 Testing:
-- Pending: rerun CPU conversion to confirm warnings are resolved.
+- Pending: rerun conversion to verify the warning no longer appears.
