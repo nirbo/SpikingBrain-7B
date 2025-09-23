@@ -1,8 +1,7 @@
-Title: Use new prepare_model_for_kbit_training signature
+Title: Add scheduler and gradient clipping options
 
 Summary:
-- Updated QLoRA flow to call prepare_model_for_kbit_training with only the supported arguments (use_gradient_checkpointing=True).
-- Removes unsupported keyword layer_norm_names that caused runtime TypeError.
+- Added CLI arguments --warmup-steps and --max-grad-norm, wiring them into UnslothTrainingArguments so learning rate warmup and gradient clipping can be configured.
 
 Testing:
-- Pending: rerun 4-bit QLoRA command to confirm it proceeds past model preparation.
+- Pending: rerun fine-tuning with warmup/clipping flags to check for stability improvements.

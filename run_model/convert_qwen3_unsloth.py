@@ -33,6 +33,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--per-device-train-batch-size", type=int, default=1, help="Per-device batch size")
     parser.add_argument("--gradient-accumulation-steps", type=int, default=16, help="Gradient accumulation steps (Unsloth will fuse optimisations)")
     parser.add_argument("--learning-rate", type=float, default=2e-5, help="Base learning rate for fine-tuning")
+    parser.add_argument("--warmup-steps", type=int, default=0, help="Warmup steps for scheduler")
+    parser.add_argument("--max-grad-norm", type=float, default=1.0, help="Maximum gradient norm (clipping)")
     parser.add_argument("--num-train-epochs", type=float, default=1.0, help="Number of epochs for fine-tuning")
     parser.add_argument("--save-steps", type=int, default=500, help="Checkpoint save interval during fine-tuning")
     parser.add_argument("--logging-steps", type=int, default=50, help="Logging interval during fine-tuning")
@@ -44,7 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--optim", default="adamw_torch", help="Optimizer name for UnslothTrainingArguments (e.g. 'adamw_8bit')")
     parser.add_argument("--load-in-4bit", action="store_true", help="Enable 4-bit loading via bitsandbytes")
     parser.add_argument("--use-lora", action="store_true", help="Apply LoRA adapters instead of full fine-tuning")
-    parser.add_argument("--lora-r", type=int, default=64, help="LoRA rank")
+    parser.add_argument("--lora-r", type=int, default=32, help="LoRA rank")
     parser.add_argument("--lora-alpha", type=int, default=16, help="LoRA alpha")
     parser.add_argument("--lora-dropout", type=float, default=0.0, help="LoRA dropout")
     parser.add_argument("--use-rslora", action="store_true", help="Enable rank-stabilized LoRA if supported")
@@ -234,6 +236,8 @@ def prepare_unsloth_trainer(
         gradient_checkpointing="unsloth",
         optim=args.optim,
         report_to="none",
+        max_grad_norm=args.max_grad_norm,
+        warmup_steps=args.warmup_steps,
         max_steps=-1,
     )
 
