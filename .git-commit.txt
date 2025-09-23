@@ -1,7 +1,7 @@
-Title: Switch gradient checkpointing to Unsloth mode
+Title: Resize token embeddings before copying Qwen3 weights
 
 Summary:
-- Updated UnslothTrainingArguments to use gradient_checkpointing="unsloth" so the optimized checkpointing path is guaranteed.
+- After instantiating the hybrid model, call resize_token_embeddings(tokenizer.vocab_size) so embedding and lm_head shapes match Qwen3 (151936 slots), eliminating skip warnings during conversion.
 
 Testing:
-- Pending: rerun conversion/fine-tuning to verify Unsloth reports the expected checkpointing mode.
+- Pending: rerun conversion to confirm no shape mismatch warnings for lm_head/embed_tokens.

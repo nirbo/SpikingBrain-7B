@@ -240,7 +240,9 @@ def main() -> None:
         LOGGER.info("Instantiating hybrid model with Qwen3-compatible configuration")
         config = build_config_from_qwen(tokenizer)
         device = torch.device(args.device)
-        hybrid_model = GLAswaForCausalLM(config).to(device)
+        hybrid_model = GLAswaForCausalLM(config)
+        hybrid_model.resize_token_embeddings(tokenizer.vocab_size)
+        hybrid_model = hybrid_model.to(device)
 
         LOGGER.info("Copying Qwen3 weights into the hybrid model")
         copy_qwen_to_spikingbrain(args.qwen3_path, hybrid_model)
