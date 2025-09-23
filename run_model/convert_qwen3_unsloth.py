@@ -12,7 +12,7 @@ from typing import Dict, Iterable, Optional
 import torch
 from safetensors.torch import load_file
 
-from transformers import AutoConfig, AutoTokenizer
+from transformers import AutoConfig, AutoTokenizer, BitsAndBytesConfig
 
 from hf_7B_model import GLAswaConfig, GLAswaForCausalLM
 from unsloth import UnslothTrainer, UnslothTrainingArguments
@@ -42,6 +42,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cpu", help="Device to place converted model on (e.g. 'cuda', 'cpu')")
     parser.add_argument("--extra-dataset-args", default=None, help="JSON string of extra keyword arguments for datasets.load_dataset (e.g. data_files)")
     parser.add_argument("--optim", default="adamw_torch", help="Optimizer name for UnslothTrainingArguments (e.g. 'adamw_8bit')")
+    parser.add_argument("--load-in-4bit", action="store_true", help="Enable 4-bit loading via bitsandbytes")
+    parser.add_argument("--use-lora", action="store_true", help="Apply LoRA adapters instead of full fine-tuning")
+    parser.add_argument("--lora-r", type=int, default=64, help="LoRA rank")
+    parser.add_argument("--lora-alpha", type=int, default=16, help="LoRA alpha")
+    parser.add_argument("--lora-dropout", type=float, default=0.0, help="LoRA dropout")
+    parser.add_argument("--use-rslora", action="store_true", help="Enable rank-stabilized LoRA if supported")
     return parser.parse_args()
 
 
@@ -205,7 +211,7 @@ def prepare_unsloth_trainer(
     dataset = dataset.map(
         format_example,
         remove_columns=original_columns,
-        num_proc=1,
+        num_proc=30,
     )
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
@@ -265,8 +271,62 @@ def main() -> None:
     if args.train:
         if args.dataset is None:
             raise ValueError("--dataset must be provided when --train is specified")
+
         LOGGER.info("Loading converted model from %s for Unsloth fine-tuning", args.output_dir)
-        model = GLAswaForCausalLM.from_pretrained(args.output_dir, torch_dtype=torch.bfloat16 if args.bf16 else torch.float32)
+
+        if args.load_in_4bit:
+            if args.device != "cuda":
+                raise ValueError("4-bit loading requires --device cuda")
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16 if args.bf16 else torch.float16,
+            )
+            model = GLAswaForCausalLM.from_pretrained(
+                args.output_dir,
+                quantization_config=bnb_config,
+                device_map="auto",
+            )
+        else:
+            device = torch.device(args.device)
+            model = GLAswaForCausalLM.from_pretrained(
+                args.output_dir,
+                torch_dtype=torch.bfloat16 if args.bf16 else torch.float32,
+            ).to(device)
+
+        if args.use_lora:
+            try:
+                from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+            except ImportError as exc:
+                raise ImportError("peft is required for LoRA. Install with `pip install peft`." ) from exc
+
+            target_modules = [
+                "attn.q_proj",
+                "attn.k_proj",
+                "attn.v_proj",
+                "attn.o_proj",
+                "mlp.gate_proj",
+                "mlp.up_proj",
+                "mlp.down_proj",
+            ]
+
+            if args.load_in_4bit:
+                model = prepare_model_for_kbit_training(model)
+
+            lora_config = LoraConfig(
+                r=args.lora_r,
+                lora_alpha=args.lora_alpha,
+                lora_dropout=args.lora_dropout,
+                bias="none",
+                task_type="CAUSAL_LM",
+                target_modules=target_modules,
+                use_rslora=args.use_rslora,
+            )
+            model = get_peft_model(model, lora_config)
+            model.print_trainable_parameters()
+
+        model.config.use_cache = False
         model.gradient_checkpointing_enable()
         trainer = prepare_unsloth_trainer(
             model=model,

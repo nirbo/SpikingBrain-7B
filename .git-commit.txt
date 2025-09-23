@@ -1,7 +1,9 @@
-Title: Remove redundant GenerationMixin inheritance
+Title: Add optional 4-bit QLoRA path to conversion script
 
 Summary:
-- Reverted HybridPreTrainedModel back to PreTrainedModel only while keeping GenerationMixin on HybridModel and GLAswaForCausalLM, preventing MRO conflicts and still suppressing warnings.
+- Introduced CLI flags for 4-bit loading (--load-in-4bit) and LoRA settings (rank, alpha, dropout, RSLoRA) to enable memory-efficient fine-tuning.
+- When --load-in-4bit is set, use BitsAndBytesConfig to quantize the converted model; optionally wrap with PEFT LoRA adapters targeting attention and MLP projections.
+- Gradient checkpointing and cache settings updated to work with both full fine-tuning and QLoRA configurations.
 
 Testing:
-- Pending: rerun conversion to verify clean logs and no TypeError.
+- Pending: launch fine-tuning with --load-in-4bit --use-lora to verify reduced VRAM usage.
