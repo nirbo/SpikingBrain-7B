@@ -312,7 +312,8 @@ def main() -> None:
 
         if args.use_lora:
             try:
-                from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+                from peft import LoraConfig, get_peft_model
+                from peft.utils.other import prepare_model_for_kbit_training
             except ImportError as exc:
                 raise ImportError("peft is required for LoRA. Install with `pip install peft`." ) from exc
 
@@ -327,7 +328,12 @@ def main() -> None:
             ]
 
             if args.load_in_4bit:
-                model = prepare_model_for_kbit_training(model)
+                model = prepare_model_for_kbit_training(
+                    model,
+                    use_gradient_checkpointing=True,
+                    layer_norm_names=[],
+                    cast_input_dtype=False,
+                )
 
             lora_config = LoraConfig(
                 r=args.lora_r,
@@ -340,6 +346,11 @@ def main() -> None:
             )
             model = get_peft_model(model, lora_config)
             model.print_trainable_parameters()
+            dtype_for_modules = torch.float16 if use_fp16 else torch.bfloat16
+            if hasattr(model, "get_input_embeddings"):
+                model.get_input_embeddings().to(dtype_for_modules)
+            if hasattr(model, "lm_head") and model.lm_head is not None:
+                model.lm_head.to(dtype_for_modules)
 
         model.config.use_cache = False
         model.gradient_checkpointing_enable()

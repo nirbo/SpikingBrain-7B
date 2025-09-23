@@ -1,8 +1,8 @@
-Title: Detect actual model dtype before setting bf16/fp16 flags
+Title: Prevent prepare_model_for_kbit_training from casting to float32
 
 Summary:
-- Examine the loaded model's parameter dtype; only enable bf16 if tensors are bfloat16, otherwise fall back to fp16 when the weights are float16.
-- Warn the user when a bf16 request is downgraded to fp16 to avoid Unsloth precision mismatches.
+- Call prepare_model_for_kbit_training with cast_input_dtype=False and layer_norm names empty so embeddings remain in the compute dtype for flash attention.
+- After attaching LoRA adapters, ensure input embeddings and lm_head are explicitly cast back to the training dtype (fp16/bf16).
 
 Testing:
-- Pending: rerun 4-bit QLoRA command on the RTX 5090 to confirm the precision error is gone.
+- Pending: rerun QLoRA command to confirm FlashAttention no longer receives float32 tensors.
