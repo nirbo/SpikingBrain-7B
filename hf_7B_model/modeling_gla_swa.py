@@ -14,6 +14,7 @@ from einops import rearrange
 from transformers.activations import ACT2FN
 from transformers.modeling_outputs import (BaseModelOutputWithPast,
                                            CausalLMOutputWithPast)
+from transformers.generation.utils import GenerationMixin
 from transformers.modeling_utils import PreTrainedModel
 from transformers.utils import logging
 
@@ -134,7 +135,7 @@ class HybridBlock(nn.Module):
         return outputs
 
 
-class HybridPreTrainedModel(PreTrainedModel):
+class HybridPreTrainedModel(PreTrainedModel, GenerationMixin):
 
     config_class = GLAswaConfig
     supports_gradient_checkpointing = True
