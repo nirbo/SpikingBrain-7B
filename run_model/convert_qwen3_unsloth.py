@@ -48,6 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lora-alpha", type=int, default=16, help="LoRA alpha")
     parser.add_argument("--lora-dropout", type=float, default=0.0, help="LoRA dropout")
     parser.add_argument("--use-rslora", action="store_true", help="Enable rank-stabilized LoRA if supported")
+    parser.add_argument("--per-device-eval-batch-size", type=int, default=None, help="Evaluation batch size; defaults to train batch size if unset")
     return parser.parse_args()
 
 
@@ -187,6 +188,9 @@ def prepare_unsloth_trainer(
     text_column: str,
     args: argparse.Namespace,
     extra_dataset_kwargs: Optional[dict],
+    use_bf16: bool,
+    use_fp16: bool,
+    eval_batch_size: int,
 ) -> UnslothTrainer:
     dataset_kwargs = extra_dataset_kwargs or {}
     dataset = load_dataset(dataset_name, split=dataset_split, **dataset_kwargs)
@@ -224,7 +228,9 @@ def prepare_unsloth_trainer(
         num_train_epochs=args.num_train_epochs,
         logging_steps=args.logging_steps,
         save_steps=args.save_steps,
-        bf16=args.bf16,
+        per_device_eval_batch_size=eval_batch_size,
+        bf16=use_bf16,
+        fp16=use_fp16,
         gradient_checkpointing="unsloth",
         optim=args.optim,
         report_to="none",
@@ -295,6 +301,16 @@ def main() -> None:
                 torch_dtype=torch.bfloat16 if args.bf16 else torch.float32,
             ).to(device)
 
+        requested_dtype = torch.bfloat16 if args.bf16 else torch.float16
+        model_dtype = getattr(model, "dtype", requested_dtype)
+        use_bf16 = args.bf16 and model_dtype == torch.bfloat16
+        use_fp16 = not use_bf16 and model_dtype == torch.float16
+        if args.bf16 and not use_bf16:
+            LOGGER.warning(
+                "Model dtype is %s; falling back to fp16 training to satisfy Unsloth requirements.",
+                model_dtype,
+            )
+
         if args.use_lora:
             try:
                 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
@@ -328,6 +344,7 @@ def main() -> None:
 
         model.config.use_cache = False
         model.gradient_checkpointing_enable()
+        eval_batch_size = args.per_device_eval_batch_size or args.per_device_train_batch_size
         trainer = prepare_unsloth_trainer(
             model=model,
             tokenizer=tokenizer,
@@ -336,6 +353,9 @@ def main() -> None:
             text_column=args.text_column,
             args=args,
             extra_dataset_kwargs=extra_dataset_kwargs,
+            use_bf16=use_bf16,
+            use_fp16=use_fp16,
+            eval_batch_size=eval_batch_size,
         )
         trainer.train()
         trainer.save_model(args.output_dir)

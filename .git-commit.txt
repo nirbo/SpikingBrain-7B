@@ -1,9 +1,9 @@
-Title: Add optional 4-bit QLoRA path to conversion script
+Title: Make 4-bit QLoRA training compatible with precision checks
 
 Summary:
-- Introduced CLI flags for 4-bit loading (--load-in-4bit) and LoRA settings (rank, alpha, dropout, RSLoRA) to enable memory-efficient fine-tuning.
-- When --load-in-4bit is set, use BitsAndBytesConfig to quantize the converted model; optionally wrap with PEFT LoRA adapters targeting attention and MLP projections.
-- Gradient checkpointing and cache settings updated to work with both full fine-tuning and QLoRA configurations.
+- Added --per-device-eval-batch-size and passed it to UnslothTrainingArguments to control eval memory.
+- Detected model dtype after loading; if bf16 requested but model remains fp16, automatically fall back to fp16 and warn.
+- Forward bf16/fp16 flags explicitly and reuse them in UnslothTrainingArguments.
 
 Testing:
-- Pending: launch fine-tuning with --load-in-4bit --use-lora to verify reduced VRAM usage.
+- Pending: rerun 4-bit QLoRA command with bf16 to confirm the precision mismatch error is resolved.
