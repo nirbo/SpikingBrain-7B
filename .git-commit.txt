@@ -1,9 +1,8 @@
-Title: Base conversion config on Qwen3 AutoConfig
+Title: Expand tokenizer to match Qwen3 vocab before resizing embeddings
 
 Summary:
-- Load Qwen3 AutoConfig to capture exact vocab size, FFN width, and positional settings before building GLAswaConfig.
-- Pass AutoConfig to tokenizer loader and resize token embeddings to the source vocab (151936) prior to weight copy, eliminating lm_head/embed mismatch warnings.
-- Ignore spikingbrain-qwen3-converted/ artifacts.
+- When loading the tokenizer, add placeholder tokens so its length matches source_config.vocab_size (151936) before copying weights.
+- Ensures resize_token_embeddings aligns with checkpoint rows and avoids lm_head/embed mismatch warnings.
 
 Testing:
-- Pending: rerun conversion on CPU to confirm clean logging.
+- Pending: rerun conversion to confirm warnings gone.

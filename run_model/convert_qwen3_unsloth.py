@@ -52,6 +52,13 @@ def load_tokenizer(qwen_path: str, source_config: AutoConfig) -> AutoTokenizer:
         tokenizer.bos_token_id = source_config.bos_token_id
     if tokenizer.eos_token_id is None:
         tokenizer.eos_token_id = source_config.eos_token_id
+
+    current_size = len(tokenizer)
+    target_size = source_config.vocab_size
+    if current_size < target_size:
+        extra_tokens = target_size - current_size
+        tokenizer.add_tokens([f"<extra_token_{i}>" for i in range(extra_tokens)])
+
     return tokenizer
 
 
