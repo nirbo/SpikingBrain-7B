@@ -300,8 +300,15 @@ def main() -> None:
                 args.output_dir,
                 torch_dtype=torch.bfloat16 if args.bf16 else torch.float32,
             ).to(device)
-        use_bf16 = args.bf16
-        use_fp16 = not args.bf16
+        param = next((p for p in model.parameters() if p is not None), None)
+        model_dtype = param.dtype if param is not None else (torch.bfloat16 if args.bf16 else torch.float16)
+        use_bf16 = args.bf16 and model_dtype == torch.bfloat16
+        use_fp16 = (not use_bf16) and model_dtype == torch.float16
+        if args.bf16 and not use_bf16:
+            LOGGER.warning(
+                "Model weights are loaded in %s; enabling fp16 training to satisfy precision requirements.",
+                model_dtype,
+            )
 
         if args.use_lora:
             try:

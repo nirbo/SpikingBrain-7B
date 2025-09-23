@@ -1,8 +1,8 @@
-Title: Keep bf16 requests when using 4-bit QLoRA
+Title: Detect actual model dtype before setting bf16/fp16 flags
 
 Summary:
-- Removed dtype fallback logic so bf16 requests are honored even if the quantized base reports float16; compute dtype is already set via BitsAndBytesConfig.
-- fp16/bf16 flags now align directly with CLI arguments.
+- Examine the loaded model's parameter dtype; only enable bf16 if tensors are bfloat16, otherwise fall back to fp16 when the weights are float16.
+- Warn the user when a bf16 request is downgraded to fp16 to avoid Unsloth precision mismatches.
 
 Testing:
-- Pending: rerun QLoRA command with --bf16 to confirm FlashAttention uses bf16 without errors.
+- Pending: rerun 4-bit QLoRA command on the RTX 5090 to confirm the precision error is gone.
