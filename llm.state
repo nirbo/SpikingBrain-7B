@@ -1,0 +1,18 @@
+=== Original Task Description ===
+User request: "Start by reading AGENTS.md and make any persistent and mental notes about the rules in there that you must strictly adhere to. Then, proceed to read the project's README and associated/cited arxiv paper about SpikingBrain. Once you are up to speed, I need a full analysis of this codebase, focus on the HF 7B Model code. I'd like to know how exactly the model is structured and what are its benefits over a standard transformer/mamba/linear models. Once that report is ready, add to its bottom a researched list of potential architecture improvements we could apply to the model's current structure in order to be able to reach an end goal of a small model (up to 7B, give or take) that will be ultra-smart, ultra-deep, capable of deep reasoning and self-reflection, and a super instruct-trained so that I can use it as an agentic coding model."
+
+=== Current Plan ===
+1. Review project guidelines: read AGENTS.md and capture mandatory rules. [COMPLETED]
+2. Study README and locate referenced SpikingBrain arXiv paper; review both sources for background. [COMPLETED]
+3. Inspect HF 7B model code to understand architecture, data flow, and differentiators. [COMPLETED]
+4. Update WORKPLAN with roadmap, then adjust HF configuration to scale the model toward ~14B while preserving architecture. [COMPLETED]
+5. Author an Unsloth-based conversion/training script that loads Qwen3-14B weights into the hybrid model and enables follow-up fine-tuning. [COMPLETED]
+
+=== Action Log (Latest) ===
+- Added tokenizer-based truncation/filtering so only sequences ≤ --max-seq-length reach the trainer. (Commit a8c07f3)
+
+=== Current Summary ===
+Max sequence length is now enforced; long conversations are excluded before batching.
+
+=== Next Action ===
+Re-run the fine-tune command with the desired hyperparameters.
